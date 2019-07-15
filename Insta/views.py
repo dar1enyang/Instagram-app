@@ -24,18 +24,21 @@ class PostListView(LoginRequiredMixin, ListView):
             following.add(conn.following)
         return Post.objects.filter(author__in=following)
 
+
 class PostDetailView(LoginRequiredMixin, DetailView):
     model = Post
     template_name = "post_detail.html"
 
     def get_context_data(self, **kwargs):
         data = super().get_context_data(**kwargs)
-        liked = Like.objects.filter(post=self.kwargs.get('pk'), user=self.request.user).first()
+        liked = Like.objects.filter(post=self.kwargs.get(
+            'pk'), user=self.request.user).first()
         if liked:
             data['liked'] = 1
         else:
             data['liked'] = 0
         return data
+
 
 class ExploreView(LoginRequiredMixin, ListView):
     model = Post
@@ -45,36 +48,49 @@ class ExploreView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         return Post.objects.all().order_by('-posted_on')[:20]
 
-class PostCreateView(CreateView):
+
+class PostCreateView(LoginRequiredMixin, CreateView):
     model = Post
+    success_url = reverse_lazy('home')
     template_name = "make_post.html"
-    fields = '__all__'
+    fields = ['title', 'image', ]
+    login_url = 'login'
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
+
 
 class PostUpdateView(UpdateView):
     model = Post
     fields = ['title']
     template_name = 'post_edit.html'
 
+
 class PostDeleteView(DeleteView):
     model = Post
     template_name = 'post_delete.html'
     success_url = reverse_lazy('home')
+
 
 class SignUp(CreateView):
     form_class = CustomUserCreationForm
     success_url = reverse_lazy('login')
     template_name = 'signup.html'
 
+
 class UserProfile(LoginRequiredMixin, DetailView):
     model = InstaUser
     template_name = 'user_profile.html'
     login_url = 'login'
+
 
 class EditProfile(LoginRequiredMixin, UpdateView):
     model = InstaUser
     template_name = 'edit_profile.html'
     fields = ['profile_pic', 'username']
     login_url = 'login'
+
 
 @ajax_request
 def toggleFollow(request):
@@ -85,10 +101,12 @@ def toggleFollow(request):
     try:
         if current_user != follow_user:
             if request.POST.get('type') == 'follow':
-                connection = UserConnection(creator=current_user, following=follow_user)
+                connection = UserConnection(
+                    creator=current_user, following=follow_user)
                 connection.save()
             elif request.POST.get('type') == 'unfollow':
-                UserConnection.objects.filter(creator=current_user, following=follow_user).delete()
+                UserConnection.objects.filter(
+                    creator=current_user, following=follow_user).delete()
             result = 1
         else:
             result = 0
@@ -101,6 +119,7 @@ def toggleFollow(request):
         'type': request.POST.get('type'),
         'follow_user_pk': follow_user_pk
     }
+
 
 @ajax_request
 def addLike(request):

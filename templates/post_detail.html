@@ -13,10 +13,16 @@
                 {% endif %}
                 {{ object.author.username }}
             </a>
+            {% if user == object.author %}
+            <a class="edit-desktop" href="{% url 'delete_post' object.pk %}">
+                <button class="edit-profile">Delete Post</button>
+            </a>
+            {% endif %}
         </div>
         <div class="image__wrapper">
             <img class="card__main-image" src="http://{{ request.META.HTTP_HOST }}/{{object.image.url}}" width='1000', height='1000'>
         </div>
+        
         <div class="comments-portion">
             <div class="likes-timestamp-row">
                 <div class="likes">
